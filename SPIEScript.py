@@ -1,21 +1,22 @@
 # Code generated with Microsoft Copilot
+import warnings
 
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.optimize import curve_fit
+from scipy.optimize import curve_fit, OptimizeWarning
 from PIL import Image
 import cv2
 from matplotlib.patches import Ellipse
 
 # physical camera properties you may need to change
 # https://telescopicwatch.com/meade-8-lx200-acf-review/ for focal length
-focal_length = 2032.0 #mm on 8 inch LX200 ACF
+focal_length = 3048.0 # 2032.0 #mm on 8 inch LX200 ACF
 # https://www.celestron.com/products/neximage-5-solar-system-imager-5mp?srsltid=AfmBOopld100CNHs0HJw5GjLfA6yfL3MUhcrFf0_J6KfTKlHphuWg0kR#specifications
-pixel_size = 4.4 #2.2 micron square on celestron nexImage 5, with 2x2 binning on lower resolution?
+pixel_size = 2.2 #2.2 micron square on celestron nexImage 5, with 2x2 binning on lower resolution?
 plate_scale = 206.265 *pixel_size/focal_length  # arcsec/pixel
 
 # Load and convert image to grayscale
-image = Image.open("1-60.bmp").convert("L")
+image = Image.open("EarlyTest.png").convert("L")
 image_np = np.array(image)
 
 # Threshold and crop around the dot
@@ -66,7 +67,19 @@ def gaussian_1d(x, amp, x0, sigma, offset):
 
 # Fit 1D Gaussian
 initial_guess_1d = (y_data.max(), len(y_data) // 2, 10, y_data.min())
-popt_1d, _ = curve_fit(gaussian_1d, x_data, y_data, p0=initial_guess_1d)
+try:
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", OptimizeWarning)
+        popt_1d, _ = curve_fit(gaussian_1d, x_data, y_data, p0=initial_guess_1d)
+except (RuntimeError, OptimizeWarning):
+    # Fallback: try a different initial guess
+    initial_guess_2 = (y_data.max() - y_data.min(), np.argmax(y_data), len(y_data)/5, y_data.min())
+    try:
+        popt_1d, _ = curve_fit(gaussian_1d, x_data, y_data, p0=initial_guess_2)
+    except Exception as e:
+        print(f"Fit failed completely: {e}")
+        popt_1d = None
+
 amp1d, x01d, sigma1d, offset1d = popt_1d
 fwhm_1d_arcsec = 2.355 * sigma1d * plate_scale
 fitted_1d = gaussian_1d(x_data, *popt_1d)
