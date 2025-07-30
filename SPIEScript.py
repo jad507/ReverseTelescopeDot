@@ -16,7 +16,7 @@ pixel_size = 2.2 #2.2 micron square on celestron nexImage 5, with 2x2 binning on
 plate_scale = 206.265 *pixel_size/focal_length  # arcsec/pixel
 
 # Load and convert image to grayscale
-image = Image.open("EarlyTest.png").convert("L")
+image = Image.open("1-250exposure20026.bmp").convert("L")
 image_np = np.array(image)
 
 # Threshold and crop around the dot
@@ -87,15 +87,15 @@ fitted_1d = gaussian_1d(x_data, *popt_1d)
 # Plotting
 
 plt.rcParams.update({
-    'font.size': 18,
-    'axes.titlesize': 20,
-    'axes.labelsize': 18,
-    'xtick.labelsize': 16,
-    'ytick.labelsize': 16,
-    'legend.fontsize': 16
+    'font.size': 20,
+    'axes.titlesize': 24,
+    'axes.labelsize': 20,
+    'xtick.labelsize': 18,
+    'ytick.labelsize': 18,
+    'legend.fontsize': 18
 })
 
-fig, axs = plt.subplots(1, 3, figsize=(18, 5))
+fig, axs = plt.subplots(1, 3, figsize=(18, 6))
 
 # Cropped image
 axs[0].imshow(cropped, cmap='gray')
@@ -113,13 +113,13 @@ axs[1].axvline(right_fwhm, color='green', linestyle='--')
 axs[1].set_title(f"1D Fit (FWHM: {fwhm_1d_arcsec:.2f}\" )")
 axs[1].set_xlabel("Pixel")
 axs[1].set_ylabel("Intensity")
-axs[1].legend()
+axs[1].legend(loc='upper right', bbox_to_anchor=(1.3, 1))
 axs[1].grid(True)
 
 # 2D residuals with FWHM ellipse
 axs[2].imshow(residuals_2d, cmap='bwr')
 ellipse = Ellipse((x0, y0), width=2.355*sigma_x*2, height=2.355*sigma_y*2,
-                  edgecolor='lime', facecolor='none', lw=2)
+                  edgecolor='lime', facecolor='none', lw=4)
 axs[2].add_patch(ellipse)
 axs[2].set_title(f"2D Residuals\nFWHM X: {fwhm_x_arcsec:.2f}\"  |  FWHM Y: {fwhm_y_arcsec:.2f}\"")
 axs[2].axis('off')
