@@ -7,6 +7,8 @@ from scipy.optimize import curve_fit, OptimizeWarning
 from PIL import Image
 import cv2
 from matplotlib.patches import Ellipse
+from matplotlib import rcParams, font_manager
+
 
 # physical camera properties you may need to change
 # https://telescopicwatch.com/meade-8-lx200-acf-review/ for focal length
@@ -85,6 +87,20 @@ fwhm_1d_arcsec = 2.355 * sigma1d * plate_scale
 fitted_1d = gaussian_1d(x_data, *popt_1d)
 
 # Plotting
+
+# Attempt to locate Proxima Nova font installed via Adobe Fonts
+proxima_font_path = None
+for font_path in font_manager.findSystemFonts(fontpaths=None, fontext='ttf'):
+    if "proxima" in font_path.lower() and "nova" in font_path.lower():
+        proxima_font_path = font_path
+        break
+
+# If found, register and set as default font
+if proxima_font_path:
+    proxima_font = font_manager.FontProperties(fname=proxima_font_path)
+    rcParams['font.family'] = proxima_font.get_name()
+else:
+    print("Proxima Nova font not found. Please ensure it is installed via Adobe Fonts.")
 
 plt.rcParams.update({
     'font.size': 20,
