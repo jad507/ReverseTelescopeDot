@@ -15,6 +15,17 @@ focal_length = 3048.0 # 2032.0 #mm on 8 inch LX200 ACF
 pixel_size = 2.2 #2.2 micron square on celestron nexImage 5, with 2x2 binning on lower resolution?
 plate_scale = 206.265 *pixel_size/focal_length  # arcsec/pixel
 
+
+# Penn State Brand Colors
+nittany_navy = "#001E44"
+beaver_blue = "#1E407C"
+pugh_blue = "#96BEE6"
+white = "#FFFFFF"
+land_grant = "#6A3028"
+penns_forest = "#4A7729"
+futures_calling = "#99CC00"
+
+
 # Load and convert image to grayscale
 image = Image.open("EarlyTest.png").convert("L")
 image_np = np.array(image)
@@ -89,20 +100,20 @@ fig, axs = plt.subplots(1, 3, figsize=(18, 5))
 
 # Cropped image
 axs[0].imshow(cropped, cmap='gray')
-axs[0].set_title("Cropped Image")
+axs[0].set_title("Cropped Image", color = nittany_navy)
 axs[0].axis('off')
 
 
 # 1D Gaussian fit with FWHM lines
-axs[1].plot(x_data, y_data, label="Data", color='blue')
-axs[1].plot(x_data, fitted_1d, label="1D Gaussian Fit", color='red', linestyle='--')
+axs[1].plot(x_data, y_data, label="Data", color=beaver_blue)
+axs[1].plot(x_data, fitted_1d, label="1D Gaussian Fit", color=land_grant, linestyle='--')
 left_fwhm = x01d - 0.5 * 2.355 * sigma1d
 right_fwhm = x01d + 0.5 * 2.355 * sigma1d
-axs[1].axvline(left_fwhm, color='green', linestyle='--', label='FWHM')
-axs[1].axvline(right_fwhm, color='green', linestyle='--')
-axs[1].set_title(f"1D Fit (FWHM: {fwhm_1d_arcsec:.2f}\" )")
-axs[1].set_xlabel("Pixel")
-axs[1].set_ylabel("Intensity")
+axs[1].axvline(left_fwhm, color=penns_forest, linestyle='--', label='FWHM')
+axs[1].axvline(right_fwhm, color=penns_forest, linestyle='--')
+axs[1].set_title(f"1D Fit (FWHM: {fwhm_1d_arcsec:.2f}\" )", color = nittany_navy)
+axs[1].set_xlabel("Pixel", color = nittany_navy)
+axs[1].set_ylabel("Intensity", color = nittany_navy)
 axs[1].legend()
 axs[1].grid(True)
 
@@ -111,7 +122,7 @@ axs[2].imshow(residuals_2d, cmap='bwr')
 ellipse = Ellipse((x0, y0), width=2.355*sigma_x*2, height=2.355*sigma_y*2,
                   edgecolor='lime', facecolor='none', lw=2)
 axs[2].add_patch(ellipse)
-axs[2].set_title(f"2D Residuals\nFWHM X: {fwhm_x_arcsec:.2f}\"  |  FWHM Y: {fwhm_y_arcsec:.2f}\"")
+axs[2].set_title(f"2D Residuals\nFWHM X: {fwhm_x_arcsec:.2f}\"  |  FWHM Y: {fwhm_y_arcsec:.2f}\"", color = nittany_navy)
 axs[2].axis('off')
 
 plt.tight_layout()
