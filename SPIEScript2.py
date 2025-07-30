@@ -134,6 +134,15 @@ def plot_fit(filename):
     fwhm_1d_arcsec = 2.355 * sigma1d * plate_scale
     fitted_1d = gaussian_1d(x_data, *popt_1d)
 
+    plt.rcParams.update({
+        'font.size': 18,
+        'axes.titlesize': 20,
+        'axes.labelsize': 18,
+        'xtick.labelsize': 16,
+        'ytick.labelsize': 16,
+        'legend.fontsize': 16
+    })
+
     fig, axs = plt.subplots(1, 3, figsize=(18, 5))
     axs[0].imshow(cropped, cmap='gray')
     axs[0].set_title("Cropped Image")
