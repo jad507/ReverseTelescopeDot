@@ -12,9 +12,9 @@ import csv
 
 # physical camera properties you may need to change
 # https://telescopicwatch.com/meade-8-lx200-acf-review/ for focal length
-focal_length = 2032.0 #mm on 8 inch LX200 ACF
+focal_length = 3048.0 #mm on 8 inch LX200 ACF
 # https://www.celestron.com/products/neximage-5-solar-system-imager-5mp?srsltid=AfmBOopld100CNHs0HJw5GjLfA6yfL3MUhcrFf0_J6KfTKlHphuWg0kR#specifications
-pixel_size = 4.4 #2.2 micron square on celestron nexImage 5, with 2x2 binning on lower resolution?
+pixel_size = 2.2 #2.2 micron square on celestron nexImage 5, with 2x2 binning on lower resolution?
 plate_scale = 206.265 *pixel_size/focal_length  # arcsec/pixel
 
 def gaussian_2d(xy, amp, x0, y0, sigma_x, sigma_y, offset):
@@ -46,13 +46,40 @@ def analyze_image(filename):
     try:
         popt_2d, _ = curve_fit(gaussian_2d, (X.ravel(), Y.ravel()), cropped.ravel(),
                                p0=(cropped.max(), cropped.shape[1]//2, cropped.shape[0]//2, 3, 3, cropped.min()))
-        _, x0, y0, sigma_x, sigma_y, _ = popt_2d
+        amp, x0, y0, sigma_x, sigma_y, offset = popt_2d
         fwhm_x = 2.355 * sigma_x * plate_scale
         fwhm_y = 2.355 * sigma_y * plate_scale
         residuals = cropped - gaussian_2d((X, Y), *popt_2d).reshape(cropped.shape)
         residual_std = np.std(residuals)
     except Exception as e:
         return {"filename": filename, "status": f"fit failed: {e}"}
+    # Extract central horizontal line for 1D fit
+    central_row = cropped[cropped.shape[0] // 2, :]
+    x_data = np.arange(len(central_row))
+    y_data = central_row
+
+    # Define 1D Gaussian
+    def gaussian_1d(x, amp, x0, sigma, offset):
+        return offset + amp * np.exp(-((x - x0) ** 2) / (2 * sigma ** 2))
+
+    # Fit 1D Gaussian
+    initial_guess_1d = (y_data.max(), len(y_data) // 2, 10, y_data.min())
+    try:
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", OptimizeWarning)
+            popt_1d, _ = curve_fit(gaussian_1d, x_data, y_data, p0=initial_guess_1d, bounds=([0, 0, 0, 0], [np.inf, len(x_data), np.inf, np.inf]))
+    except (RuntimeError, OptimizeWarning):
+        # Fallback: try a different initial guess
+        initial_guess_2 = (y_data.max() - y_data.min(), np.argmax(y_data), len(y_data) / 5, y_data.min())
+        try:
+            popt_1d, _ = curve_fit(gaussian_1d, x_data, y_data, p0=initial_guess_2, bounds=([0, 0, 0, 0], [np.inf, len(x_data), np.inf, np.inf]))
+        except Exception as e:
+            print(f"Fit failed completely: {e}")
+            popt_1d = None
+
+    amp1d, x01d, sigma1d, offset1d = popt_1d
+    fwhm_1d_arcsec = 2.355 * sigma1d * plate_scale
+    fitted_1d = gaussian_1d(x_data, *popt_1d)
 
     return {
         "filename": filename,
@@ -60,7 +87,8 @@ def analyze_image(filename):
         "saturated": saturated,
         "fwhm_x_arcsec": fwhm_x,
         "fwhm_y_arcsec": fwhm_y,
-        "residual_std": residual_std
+        "residual_std": residual_std,
+        "1D_fwhm_arcsec": fwhm_1d_arcsec
     }
 
 def plot_fit(filename):
@@ -93,12 +121,12 @@ def plot_fit(filename):
     try:
         with warnings.catch_warnings():
             warnings.simplefilter("error", OptimizeWarning)
-            popt_1d, _ = curve_fit(gaussian_1d, x_data, y_data, p0=initial_guess_1d)
+            popt_1d, _ = curve_fit(gaussian_1d, x_data, y_data, p0=initial_guess_1d, bounds=([0, 0, 0, 0], [np.inf, len(x_data), np.inf, np.inf]))
     except (RuntimeError, OptimizeWarning):
         # Fallback: try a different initial guess
         initial_guess_2 = (y_data.max() - y_data.min(), np.argmax(y_data), len(y_data) / 5, y_data.min())
         try:
-            popt_1d, _ = curve_fit(gaussian_1d, x_data, y_data, p0=initial_guess_2)
+            popt_1d, _ = curve_fit(gaussian_1d, x_data, y_data, p0=initial_guess_2, bounds=([0, 0, 0, 0], [np.inf, len(x_data), np.inf, np.inf]))
         except Exception as e:
             print(f"Fit failed completely: {e}")
             popt_1d = None
@@ -131,6 +159,7 @@ def plot_fit(filename):
     axs[2].axis('off')
 
     plt.tight_layout()
+    plt.show()
     output_file = os.path.splitext(filename)[0] + "_fit.png"
     fig.savefig(output_file, transparent=True)
     plt.close(fig)

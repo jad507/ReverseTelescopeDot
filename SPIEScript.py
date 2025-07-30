@@ -70,12 +70,12 @@ initial_guess_1d = (y_data.max(), len(y_data) // 2, 10, y_data.min())
 try:
     with warnings.catch_warnings():
         warnings.simplefilter("error", OptimizeWarning)
-        popt_1d, _ = curve_fit(gaussian_1d, x_data, y_data, p0=initial_guess_1d)
+        popt_1d, _ = curve_fit(gaussian_1d, x_data, y_data, p0=initial_guess_1d, bounds=([0, 0, 0, 0], [np.inf, len(x_data), np.inf, np.inf]))
 except (RuntimeError, OptimizeWarning):
     # Fallback: try a different initial guess
     initial_guess_2 = (y_data.max() - y_data.min(), np.argmax(y_data), len(y_data)/5, y_data.min())
     try:
-        popt_1d, _ = curve_fit(gaussian_1d, x_data, y_data, p0=initial_guess_2)
+        popt_1d, _ = curve_fit(gaussian_1d, x_data, y_data, p0=initial_guess_2, bounds=([0, 0, 0, 0], [np.inf, len(x_data), np.inf, np.inf]))
     except Exception as e:
         print(f"Fit failed completely: {e}")
         popt_1d = None

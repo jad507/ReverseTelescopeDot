@@ -1,0 +1,3 @@
+1D_fwhm_arcsec,filename,fwhm_x_arcsec,fwhm_y_arcsec,residual_std,saturated,status
+2.270526993741319,D:\Users\jad507\PycharmProjects\ReverseTelescopeDot\1-60.bmp,2.300943987483796,2.716590782146031,4.4313774632559335,False,ok
+0.7512441929401734,D:\Users\jad507\PycharmProjects\ReverseTelescopeDot\EarlyTest.png,0.7664947958753847,1.0509415647074707,2.7528157925862065,False,ok
