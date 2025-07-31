@@ -1,4 +1,5 @@
 # Code generated with Microsoft Copilot
+import os
 import warnings
 
 import numpy as np
@@ -18,8 +19,30 @@ pixel_size = 2.2 #2.2 micron square on celestron nexImage 5, with 2x2 binning on
 plate_scale = 206.265 *pixel_size/focal_length  # arcsec/pixel
 
 # Load and convert image to grayscale
-image = Image.open("1-250exposure20026.bmp").convert("L")
+filename ="1-250exposure20026.bmp"
+image = Image.open(filename).convert("L")
 image_np = np.array(image)
+
+
+def register_proxima_nova_fonts(font_dir):
+    font_map = {}
+    for file in os.listdir(font_dir):
+        if file.lower().endswith(".ttf") and "proxima" in file.lower():
+            font_path = os.path.join(font_dir, file)
+            try:
+                fm.fontManager.addfont(font_path)
+                font_prop = fm.FontProperties(fname=font_path)
+                font_name = font_prop.get_name()
+                font_map[font_name] = font_path
+            except Exception as e:
+                print(f"Failed to load font {file}: {e}")
+    return font_map
+
+def set_default_font(font_name):
+    plt.rcParams['font.family'] = font_name
+    print(f"Set '{font_name}' as the default matplotlib font.")
+
+font_directory = "C:/path/to/your/fonts"
 
 # Threshold and crop around the dot
 _, thresh = cv2.threshold(image_np, 30, 255, cv2.THRESH_BINARY)
@@ -99,8 +122,12 @@ for font_path in font_manager.findSystemFonts(fontpaths=None, fontext='ttf'):
 if proxima_font_path:
     proxima_font = font_manager.FontProperties(fname=proxima_font_path)
     rcParams['font.family'] = proxima_font.get_name()
+    font_prop = proxima_font
+    # font_prop = None
 else:
     print("Proxima Nova font not found. Please ensure it is installed via Adobe Fonts.")
+    font_prop = None
+
 
 plt.rcParams.update({
     'font.size': 20,
@@ -141,5 +168,36 @@ axs[2].set_title(f"2D Residuals\nFWHM X: {fwhm_x_arcsec:.2f}\"  |  FWHM Y: {fwhm
 axs[2].axis('off')
 
 plt.tight_layout()
+
+if font_prop:
+
+    def apply_font(ax, font_prop):
+        ax.title.set_fontproperties(font_prop)
+        ax.xaxis.label.set_fontproperties(font_prop)
+        ax.yaxis.label.set_fontproperties(font_prop)
+
+        for tick in ax.get_xticklabels() + ax.get_yticklabels():
+            tick.set_fontproperties(font_prop)
+
+        legend = ax.get_legend()
+        if legend is not None:
+            for text in legend.get_texts():
+                text.set_fontproperties(font_prop)
+
+
+    apply_font(axs[0], font_prop)
+    apply_font(axs[1], font_prop)
+    apply_font(axs[2], font_prop)
+
+plt.rcParams.update({
+    'font.size': 20,
+    'axes.titlesize': 24,
+    'axes.labelsize': 20,
+    'xtick.labelsize': 18,
+    'ytick.labelsize': 18,
+    'legend.fontsize': 18
+})
 plt.show()
+output_file = os.path.splitext(filename)[0] + "_fit.png"
+fig.savefig(output_file, transparent=True)
 
